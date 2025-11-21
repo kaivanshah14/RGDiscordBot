@@ -1,0 +1,82 @@
+# import discord
+# from discord.ext import commands
+# import random
+# import pymongo
+# import os
+# from dotenv import load_dotenv
+# from discord_interactions import InteractionsClient
+
+# load_dotenv()
+
+# intents = discord.Intents.default()
+# intents.members = True
+
+# bot = commands.Bot(command_prefix="rg!", intents=intents)
+# interactions = InteractionsClient(bot)
+
+# MONGO_URI = os.environ['MONGO_URI']
+
+# # MongoDB Database Connection
+# mongo_client = pymongo.MongoClient(MONGO_URI)
+# db = mongo_client["RealGodsEsports"]
+# clan_members_collection = db["ClanMembers"]
+
+# class Register(commands.Cog):
+
+#   def __init__(self, bot):
+#     self.bot = bot
+
+#   @interactions.slash_command(name="register",
+#                               description="Register a new clan member")
+#   @commands.has_any_role(974209321669898280, 930797586401599508
+#                          )  # Only allow roles with the provided IDs
+#   async def register(self, ctx, valorant_id, name, dob, favorite_anime,
+#                      tagline):
+#     # Validate Valorant ID format
+#     if not valorant_id.endswith("#tag") or not valorant_id.count("#") == 1:
+#       await ctx.send(
+#         "Invalid Valorant ID format. Please enter in the format 'username#tag'."
+#       )
+#       return
+
+#     # Save the registration details to the MongoDB database
+#     member_data = {
+#       "valorant_id": valorant_id,
+#       "name": name,
+#       "dob": dob,
+#       "favorite_anime": favorite_anime,
+#       "tagline": tagline
+#     }
+#     clan_members_collection.insert_one(member_data)
+
+#     await ctx.send("Registration successful!")
+
+#   @interactions.slash_command(
+#     name="whois", description="Display details of a registered clan member")
+#   async def whois(self, ctx, member: discord.Member):
+#     # Retrieve the details of the mentioned user from the MongoDB database
+#     result = clan_members_collection.find_one({"valorant_id": str(member)})
+
+#     if result:
+#       # Generate a random color for the embed
+#       color = discord.Color(random.randint(0, 0xFFFFFF))
+
+#       # Create the embed with the member's details
+#       embed = discord.Embed(title="Clan Member Details", color=color)
+#       embed.add_field(name="Name", value=result["name"], inline=False)
+#       embed.add_field(name="Date of Birth", value=result["dob"], inline=False)
+#       embed.add_field(name="Valorant ID",
+#                       value=result["valorant_id"],
+#                       inline=False)
+#       embed.add_field(name="Favorite Anime",
+#                       value=result["favorite_anime"],
+#                       inline=False)
+#       embed.add_field(name="Tagline", value=result["tagline"], inline=False)
+
+#       await ctx.send(embed=embed)
+#     else:
+#       await ctx.send("Member not found!")
+
+
+async def setup(bot):
+  await bot.add_cog(Register(bot))
