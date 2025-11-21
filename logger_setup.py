@@ -8,9 +8,12 @@ DISCORD_LOG_CHANNEL_ID = 603237664686211072
 _bot = None  # Stores bot instance (so logger can use it later)
 _last_sent_time = 0  # To prevent spam / rate limiting
 _rate_limit_seconds = 2  # Min gap between log messages
+SHUTTING_DOWN = False
 
 class DiscordHandler(logging.Handler):
     def emit(self, record):
+        if SHUTTING_DOWN:
+            return
         try:
             msg = self.format(record)
 
