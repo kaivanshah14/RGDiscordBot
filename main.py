@@ -255,7 +255,7 @@ async def main():
         return
 
     retry_count = 0
-    max_retries = 5
+    max_retries = 10
     
     while True:
         try:
@@ -263,36 +263,50 @@ async def main():
             retry_count = 0  # Reset on successful creation
             
             await load_extensions_for_client()
-            logger.info("Starting bot...")
+            if logger:
+                logger.info("Starting bot...")
             
             async with client:
+                if logger:
+                    logger.info("Bot connected, waiting for Discord...")
                 await client.start(TOKEN)
 
         except asyncio.TimeoutError:
             retry_count += 1
-            wait_time = min(10 * (2 ** retry_count), 300)  # Exponential backoff, max 5 min
-            logger.error(f"Connection timeout (attempt {retry_count}). Retrying in {wait_time}s...")
+            wait_time = min(5 * (2 ** retry_count), 300)
+            if logger:
+                logger.error(f"Connection timeout (attempt {retry_count}). Retrying in {wait_time}s...")
             await asyncio.sleep(wait_time)
             
         except discord.ConnectionClosed as e:
             retry_count += 1
-            wait_time = min(5 * (2 ** retry_count), 300)
-            logger.error(f"Discord connection closed (code: {e.code}). Retrying in {wait_time}s...")
+            wait_time = min(3 * (2 ** retry_count), 60)
+            if logger:
+                logger.warning(f"Discord connection closed (code: {e.code}). Retrying in {wait_time}s...")
             await asyncio.sleep(wait_time)
             
         except discord.PrivilegedIntentsRequired:
-            logger.critical("Privileged intents are required but not granted. Check Discord Developer Portal.")
+            if logger:
+                logger.critical("Privileged intents are required but not granted. Check Discord Developer Portal.")
+            return
+            
+        except KeyboardInterrupt:
+            if logger:
+                logger.info("Bot shutdown requested.")
             return
             
         except Exception as e:
             retry_count += 1
-            wait_time = min(10 * (2 ** retry_count), 300)
-            logger.exception(f"Unexpected error in main loop (attempt {retry_count}): {e}")
-            logger.info(f"Retrying in {wait_time}s...")
+            wait_time = min(5 * (2 ** retry_count), 120)
+            print(f"Unexpected error in main loop (attempt {retry_count}): {type(e).__name__}: {e}")
+            if logger:
+                logger.exception(f"Unexpected error in main loop (attempt {retry_count}): {e}")
+                logger.info(f"Retrying in {wait_time}s...")
             await asyncio.sleep(wait_time)
             
             if retry_count > max_retries:
-                logger.critical(f"Max retries ({max_retries}) exceeded. Stopping bot.")
+                if logger:
+                    logger.critical(f"Max retries ({max_retries}) exceeded. Stopping bot.")
                 return
 
 if __name__ == '__main__':
